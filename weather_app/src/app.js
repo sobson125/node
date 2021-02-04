@@ -4,39 +4,39 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-app.use(express.static(path.join(__dirname, '../public')));
-console.log(__dirname);
+
+const viewPath = path.join(__dirname, '../views');
 app.set('view engine', 'hbs');
+app.set('views', viewPath);
+
+// log
+console.log(__dirname);
+
+// STATIC RESOURCES
+app.use(express.static(path.join(__dirname, '../public')));
 
 
 app.get('/', (req, res) => {
   res.render('index');
 });
 
-app.get('/weather', (req, res) => {
+app.get('/weather', async (req, res) => {
   if (!req.query.address) {
     return res.send({
       error: 'Address not given',
     });
   }
-
-  geocode(req.query.address, (error, {longitude, latitude, place} = {}) => {
-    if (error) {
-      return res.send({error});
-    }
-
-    forecast(longitude, latitude, (error, data) => {
-      if (error) {
-        return res.send({error});
-      }
-
-      res.send({
-        location: place,
-        forecast: data,
-        address: req.query.address,
-      });
+  try {
+    const {longitude, latitude, place} = await geocode(req.query.address);
+    const data = await forecast(longitude, latitude);
+    res.send({
+      location: place,
+      forecast: data,
+      address: req.query.address,
     });
-  });
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 
