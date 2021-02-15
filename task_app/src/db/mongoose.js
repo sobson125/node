@@ -7,5 +7,6 @@ mongoose.connect(uris = connectionString, {
   useNewUrlParser: true,
   useCreateIndex: true,
   useUnifiedTopology: true,
+  useFindAndModify: false,
 });
 
