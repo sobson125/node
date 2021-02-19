@@ -1,22 +1,35 @@
 const express = require('express');
 const User = require('../models/User');
 
-const router = new express.Router();
+const userRouter = new express.Router();
 
 
 // USERS ENDPOINTS
-router.post('/users', async (req, res) => {
+userRouter.post('/users', async (req, res) => {
   const user = new User(req.body);
   try {
     await user.save();
-    res.status(201).send(user);
+    token = await user.generateJWT();
+    res.status(201).send(user, token);
   } catch (error) {
     console.log(error);
     res.status(400).send(error);
   }
 });
 
-router.get('/users', async (req, res) => {
+userRouter.post('/users/login', async (req, res) => {
+  const email = req.body['email'];
+  const password = req.body['password'];
+  try {
+    const user = await User.findByCredentials(email, password);
+    const token = await user.generateJWT();
+    res.send({user, token});
+  } catch (error) {
+    res.status(400).send();
+  }
+});
+
+userRouter.get('/users', async (req, res) => {
   try {
     const users = await User.find();
     res.status(200).send(users);
@@ -26,7 +39,7 @@ router.get('/users', async (req, res) => {
   }
 });
 
-router.get('/users/:id', async (req, res) => {
+userRouter.get('/users/:id', async (req, res) => {
   const _id = req.params.id;
   try {
     const user = await User.findById(_id);
@@ -40,24 +53,28 @@ router.get('/users/:id', async (req, res) => {
   }
 });
 
-router.put('/users/:id', async (req, res) => {
+userRouter.put('/users/:id', async (req, res) => {
   const _id = req.params.id;
-  const newUser = req.body;
   try {
     // eslint-disable-next-line max-len
-    const user = await User.findByIdAndUpdate(_id, newUser, {new: true, runValidators: true});
+    // const user = await User.findByIdAndUpdate(_id, newUser, {new: true, runValidators: true});
+    const user = await User.findById(_id);
     if (!user) {
       return res.status(404).send();
-    } else {
-      res.status(201).send(user);
     }
+    Object.keys(req.body).forEach((key) => {
+      user[key] = req.body[key];
+    });
+
+    await user.save();
+    res.status(201).send(user);
   } catch (error) {
     console.log(error);
     res.status(404).send();
   }
 });
 
-router.delete('/users/:id', async (req, res) => {
+userRouter.delete('/users/:id', async (req, res) => {
   const _id = req.params.id;
   try {
     const user = await User.findByIdAndDelete(_id);
@@ -70,4 +87,4 @@ router.delete('/users/:id', async (req, res) => {
     res.status(404).send(error);
   }
 });
-module.exports = router;
+module.exports = userRouter;

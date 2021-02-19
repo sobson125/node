@@ -42,15 +42,20 @@ router.put('/tasks/:id', async (req, res) => {
   const _id = req.params.id;
   const newTask = req.body;
   try {
-    const task = await Task.findByIdAndUpdate(_id, newTask, {runValidators: true, new: true});
+    const task = await Task.findById(_id);
     if (!task) {
       throw new Error('Not found');
     }
+    Object.keys(req.body).forEach((key) => {
+      task[key] = req.body[key];
+    });
+    await task.save();
     res.status(201).send(task);
   } catch (error) {
     console.log(error);
   }
 });
+
 router.delete('/tasks/:id', async (req, res) => {
   const _id = req.params.id;
   try {

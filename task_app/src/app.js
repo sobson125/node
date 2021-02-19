@@ -12,10 +12,13 @@ const port = process.env.PORT || 3000;
 
 // INIT
 const app = express();
+app.use(express.json());
 app.use(userRouter);
 app.use(taskRouter);
-app.use(express.json());
 
+app.get('/hello', (req, res) => {
+  res.send('Hello world');
+});
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
