@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 const userRouter = new express.Router();
 
@@ -10,7 +11,7 @@ userRouter.post('/users', async (req, res) => {
   try {
     await user.save();
     token = await user.generateJWT();
-    res.status(201).send(user, token);
+    res.status(201).send({user, token});
   } catch (error) {
     console.log(error);
     res.status(400).send(error);
@@ -29,6 +30,36 @@ userRouter.post('/users/login', async (req, res) => {
   }
 });
 
+
+userRouter.post('/users/logout', auth, async (req, res) => {
+  try {
+    req.user.tokens = req.user.tokens.filter((token) => {
+      return token.token !== req.token;
+    });
+    await req.user.save();
+    res.send();
+  } catch (error) {
+    console.log(error);
+    res.status(500).send();
+  }
+});
+
+userRouter.post('/users/logoutAll', auth, async (req, res) => {
+  try {
+    req.user.tokens = [];
+    await req.user.save();
+    res.send();
+  } catch (error) {
+    console.log(error);
+    res.status(500).send();
+  }
+});
+
+
+userRouter.get('/users/me', auth, async (req, res) => {
+  res.send(req.user);
+});
+
 userRouter.get('/users', async (req, res) => {
   try {
     const users = await User.find();
@@ -38,6 +69,7 @@ userRouter.get('/users', async (req, res) => {
     res.status(400).send(error);
   }
 });
+
 
 userRouter.get('/users/:id', async (req, res) => {
   const _id = req.params.id;
