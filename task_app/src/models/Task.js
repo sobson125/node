@@ -10,6 +10,11 @@ const taskSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User',
+  },
 });
 
 taskSchema.pre('save', function(next) {

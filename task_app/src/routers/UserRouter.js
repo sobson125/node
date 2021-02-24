@@ -57,27 +57,14 @@ userRouter.post('/users/logoutAll', auth, async (req, res) => {
 
 
 userRouter.get('/users/me', auth, async (req, res) => {
+  await req.user.populate('tasks').execPopulate();
+  console.log(req.user.tasks);
   res.send(req.user);
 });
 
 userRouter.get('/users', async (req, res) => {
   try {
-    const users = await User.find();
-    res.status(200).send(users);
-  } catch (error) {
-    console.log(error);
-    res.status(400).send(error);
-  }
-});
-
-
-userRouter.get('/users/:id', async (req, res) => {
-  const _id = req.params.id;
-  try {
-    const user = await User.findById(_id);
-    if (!user) {
-      return res.status(404).send();
-    }
+    const user = await User.find();
     res.status(200).send(user);
   } catch (error) {
     console.log(error);
@@ -85,35 +72,25 @@ userRouter.get('/users/:id', async (req, res) => {
   }
 });
 
-userRouter.put('/users/:id', async (req, res) => {
-  const _id = req.params.id;
+
+userRouter.put('/users/me', auth, async (req, res) => {
   try {
-    // eslint-disable-next-line max-len
-    // const user = await User.findByIdAndUpdate(_id, newUser, {new: true, runValidators: true});
-    const user = await User.findById(_id);
-    if (!user) {
-      return res.status(404).send();
-    }
     Object.keys(req.body).forEach((key) => {
-      user[key] = req.body[key];
+      req.user[key] = req.body[key];
     });
 
-    await user.save();
-    res.status(201).send(user);
+    await req.user.save();
+    res.status(201).send(req.user);
   } catch (error) {
     console.log(error);
     res.status(404).send();
   }
 });
 
-userRouter.delete('/users/:id', async (req, res) => {
-  const _id = req.params.id;
+userRouter.delete('/users/me', auth, async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(_id);
-    if (!user) {
-      throw new Error('No user found');
-    }
-    res.status(200).send(user);
+    await req.user.remove();
+    res.status(200).send(req.user);
   } catch (error) {
     console.log(error);
     res.status(404).send(error);
