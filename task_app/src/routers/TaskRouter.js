@@ -19,15 +19,32 @@ router.post('/tasks', auth, async (req, res) => {
   }
 });
 
-
+// params ? isCompleted -> true/false
+// liomit, skip -> integer
+// sortBy -> asc/desc
 router.get('/tasks', auth, async (req, res) => {
+  const isCompleted = req.query.completed;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+  const skip = req.query.skip ? parseInt(req.query.skip) : 0;
+  const sortBy = req.query.sortBy;
+  const searchFor = {};
+  const sortWith = {};
+
+  if (isCompleted) {
+    searchFor.isCompleted = isCompleted;
+  }
+  searchFor.createdBy = req.user._id;
+
+  if (sortBy) {
+    const arr = sortBy.split(':');
+    sortWith[arr[0]] = arr[1] === 'desc' ? -1 : 1;
+  }
+  console.log(sortWith);
   try {
-    const tasks = await Task.find({
-      createdBy: req.user._id,
-    });
+    const tasks = await Task.find(searchFor).limit(limit).skip(skip).sort(sortWith);
     res.status(200).send(tasks);
   } catch (error) {
-    res.status(400).send(error);
+    res.status(404).send(error);
   }
 });
 
