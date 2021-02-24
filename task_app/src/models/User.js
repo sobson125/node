@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Task = require('./Task');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -43,6 +44,12 @@ const userSchema = new mongoose.Schema({
   }],
 });
 
+userSchema.virtual('tasks', {
+  ref: 'Task',
+  localField: '_id',
+  foreignField: 'createdBy',
+});
+
 userSchema.statics.findByCredentials = async (email, password)=>{
   const user = await User.findOne({email});
   if (!user) {
@@ -63,6 +70,13 @@ userSchema.methods.generateJWT = async function() {
   return token;
 };
 
+userSchema.methods.toJSON = function() {
+  const user = this;
+  const userDTO = user.toObject();
+  delete userDTO.password;
+  delete userDTO.tokens;
+  return userDTO;
+};
 
 // HASHING PASSWORD
 userSchema.pre('save', async function(next) {
@@ -74,6 +88,11 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
+userSchema.pre('remove', async function(next) {
+  const user = this;
+  Task.deleteMany({createdBy: user._id});
+  next();
+});
 
 const User = mongoose.model('User', userSchema);
 
